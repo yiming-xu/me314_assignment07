@@ -46,7 +46,7 @@ lasso.coef
 
 **LASSO hasn't dropped any variables from our model, so it was a very successful attempt at model selection. Other approaches have been covered in the chapter (although not in the lecture). Best subset selection is a brute force approach but may be useful if we are determined in reducing the size of our model.**
 
-
+**Can select variables by takign those that are 1SD more parsimonious**
 
 ```{r}
 set.seed(1)

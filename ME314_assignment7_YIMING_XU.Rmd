@@ -1,0 +1,94 @@
+---
+title: "Exercise 7 - Nonlinear Models and Tree-based Methods"
+author: "Ken Benoit, Slava Mikhaylov, and Jack Blumenau"
+output: html_document
+---
+
+```{r}
+library(ISLR)
+library(MASS)
+library(class)
+library(caret)
+set.seed(201785066) #LSE ID
+data("College", package = "ISLR")
+head(College)
+```
+
+### Exercise 7.1
+
+This question relates to the `College` dataset from the `ISLR` package.
+
+(a) Split the data into a training set and a test set. Using out-of-state tuition as the response and the other variables as the predictors, perform appropriate model selection of your choice (from day6) on the training set in order to identify a satisfactory model that uses just a subset of the predictors.
+
+```{r}
+trainIndex <- createDataPartition(College$Outstate, p = 0.8, list = FALSE) 
+College.train <- College[trainIndex, ]
+College.test <- College[-trainIndex, ]
+```
+
+```{r}
+rr.fitControl <- trainControl(method = "repeatedcv",
+                              number = 10,
+                              repeats = 10)
+
+rr.model <- train(Outstate ~ .,
+                  data = College.train, 
+                  method = "foba", 
+                  trControl = rr.fitControl,
+                  tuneLength = 16)
+rr.model
+```
+
+```{r}
+plot(rr.model)
+rr.pred <-  predict(rr.model, newdata = College.test)
+
+mean((College.test[, "Apps"] - rr.pred)^2)
+```
+
+```{r}
+glmnet.fitControl <- trainControl(method = "cv",
+                                  number = 5)
+
+glmnet.fitGrid <- expand.grid(alpha = 1, 
+                              lambda = 0:200/10)
+
+glmnet.model <- train(Outstate ~ .,
+                      data = College.train, 
+                      method = "glmnet", 
+                      trControl = glmnet.fitControl,
+                      tuneGrid = glmnet.fitGrid,
+                      thresh = 1e-12)
+
+glmnet.model
+```
+
+```{r}
+plot(glmnet.model)
+glmnet.pred <-  predict(glmnet.model, newdata = College.test)
+
+mean((College.test[, "Apps"] - glmnet.pred)^2)
+```
+
+```{r}
+coefficients(glmnet.model$finalModel, s = glmnet.model$bestTune$lambda)
+```
+
+
+
+(b) Fit a GAM on the training data, using out-of-state tuition as the response and the features selected in the previous step as the predictors. Plot the results, and explain your findings.
+
+```{r}
+gam.0 <- gam(Outstate ~ Private + Room.Board, data = College.train)
+gam.1 <- gam(Outstate ~ Private + s(Room.Board, df = 2), data = College.train) #Smoothening spline
+
+
+```
+
+(c) Evaluate the model obtained on the test set, and explain the results obtained.
+(d) For which variables, if any, is there evidence of a non-linear relationship with the response?
+
+### Exercise 7.2 
+
+Apply bagging and random forests to a data set of your choice. Be sure to fit the models on a training set and to evaluate their performance on a test set. How accurate are the results compared to simple methods like linear or logistic regression? Which of these approaches yields the best performance?
+
